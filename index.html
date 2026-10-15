@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="format-detection" content="telephone=no">
+<title>湖北养老金测算助手</title>
+<style>
+  :root{
+    --main:#15539e; --main2:#1d6bc9; --accent:#e8850c; --bg:#eef2f7;
+    --card:#ffffff; --line:#dfe6ef; --text:#20303f; --sub:#68788a; --ok:#1f8a4c; --warn:#c0392b;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  html{font-size:16px; scroll-behavior:smooth;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.55; padding-bottom:40px;
+  }
+  .wrap{max-width:480px; margin:0 auto; padding:0 12px;}
+  header{
+    background:linear-gradient(135deg,var(--main) 0%,var(--main2) 100%);
+    color:#fff; padding:22px 16px 20px; text-align:center;
+  }
+  header h1{font-size:21px; letter-spacing:1px;}
+  header p{font-size:12.5px; opacity:.9; margin-top:6px;}
+  /* 顶部步骤导航 */
+  .stepnav{
+    position:sticky; top:0; z-index:50; background:rgba(255,255,255,.97);
+    display:flex; justify-content:space-between; padding:8px 10px; box-shadow:0 1px 4px rgba(21,83,158,.12);
+  }
+  .stepnav a{
+    flex:1; text-align:center; font-size:11.5px; color:var(--sub); text-decoration:none;
+    padding:5px 0 3px; position:relative; white-space:nowrap;
+  }
+  .stepnav a b{display:block; font-size:10px; color:var(--accent); font-weight:700;}
+  .stepnav a.on{color:var(--main); font-weight:600;}
+  .card{background:var(--card); border-radius:var(--radius); padding:16px; margin-top:14px; box-shadow:0 1px 4px rgba(21,83,158,.08);}
+  .card>h2{
+    font-size:15.5px; color:var(--main); display:flex; align-items:center; gap:8px;
+    padding-bottom:10px; margin-bottom:12px; border-bottom:1px dashed var(--line);
+  }
+  .card>h2 .no{
+    background:var(--main); color:#fff; width:22px; height:22px; border-radius:50%;
+    display:inline-flex; align-items:center; justify-content:center; font-size:12.5px; flex:none;
+  }
+  .f{display:flex; flex-direction:column; gap:12px;}
+  .frow{display:flex; flex-direction:column; gap:5px;}
+  .frow label{font-size:13px; color:var(--sub);}
+  .frow label .req{color:var(--warn);}
+  .frow input[type=text],.frow input[type=number],.frow input[type=month],.frow select{
+    border:1px solid var(--line); border-radius:10px; padding:11px 12px; font-size:15.5px; width:100%;
+    background:#fbfcfe; color:var(--text); outline:none;
+  }
+  .frow input:focus,.frow select:focus{border-color:var(--main2); background:#fff;}
+  .birthWrap{display:flex; gap:6px;}
+  .birthWrap select{flex:1; min-width:0; padding:11px 6px;}
+  .frow .hint{font-size:12px; color:var(--sub);}
+  .frow .hint b{color:var(--main2); font-weight:600;}
+  .seg{display:flex; gap:8px;}
+  .seg button{
+    flex:1; padding:10px 0; border:1px solid var(--line); border-radius:10px; background:#fbfcfe;
+    font-size:14.5px; color:var(--text); cursor:pointer;
+  }
+  .seg button.on{background:var(--main); border-color:var(--main); color:#fff; font-weight:600;}
+  .btn{
+    display:block; width:100%; border:none; border-radius:12px; padding:13px; font-size:16px; font-weight:600;
+    cursor:pointer; text-align:center;
+  }
+  .btn.primary{background:var(--accent); color:#fff;}
+  .btn.ghost{background:#eef4fc; color:var(--main); border:1px solid #c9dcf3;}
+  .btn.small{width:auto; padding:8px 14px; font-size:13.5px; border-radius:9px; font-weight:500;}
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:4px;}
+  .chip{
+    background:#eef4fc; color:var(--main); border:1px solid #c9dcf3; border-radius:20px;
+    padding:6px 14px; font-size:13px; cursor:pointer;
+  }
+  .saveTip{font-size:12.5px; text-align:center; margin-top:8px;}
+  .saveTip.ok{color:var(--ok);}
+  .grow-row{display:flex; gap:8px;}
+  .grow-row .frow{flex:1;}
+  /* 计划区 */
+  .planRows{max-height:400px; overflow-y:auto; border:1px solid var(--line); border-radius:10px; padding:6px 10px;}
+  .planRow{display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px dashed #eef1f6;}
+  .planRow:last-child{border-bottom:none;}
+  .planRow .yr{width:58px; flex:none; font-size:13.5px; color:var(--sub);}
+  .planRow input{flex:1; width:100px; min-width:0; border:1px solid var(--line); border-radius:8px; padding:8px 8px; font-size:14.5px; background:#fbfcfe; outline:none;}
+  .planRow input:focus{border-color:var(--main2);}
+  .planRow .info{width:118px; flex:none; font-size:11.5px; color:var(--sub); line-height:1.35;}
+  .quick{display:flex; gap:8px; margin-top:10px; align-items:center;}
+  .quick input{flex:1; border:1px solid var(--line); border-radius:9px; padding:9px 10px; font-size:14px; background:#fbfcfe; outline:none;}
+  .note{background:#fff8ec; border:1px solid #f5dfb8; border-radius:10px; padding:9px 11px; font-size:12.5px; color:#7a5a22; margin-top:10px;}
+  /* 结果 */
+  .resultBox{background:linear-gradient(135deg,#0f3c72,#1d6bc9); border-radius:var(--radius); color:#fff; padding:18px 16px; text-align:center;}
+  .resultBox .big{font-size:34px; font-weight:800; margin:4px 0 2px;}
+  .resultBox .big small{font-size:15px; font-weight:500;}
+  .resultBox .lbl{font-size:12.5px; opacity:.85;}
+  .detail{margin-top:14px;}
+  .detail .row{display:flex; justify-content:space-between; padding:8px 2px; border-bottom:1px dashed #e4ebf4; font-size:13.5px;}
+  .detail .row:last-child{border-bottom:none;}
+  .detail .row .k{color:var(--sub);}
+  .detail .row .v{font-weight:600; color:var(--text);}
+  .detail .row.tot .v{color:var(--accent); font-size:15.5px;}
+  .extra{display:flex; gap:8px; margin-top:12px;}
+  .extra .box{flex:1; background:#f6f9fe; border-radius:10px; padding:10px; text-align:center;}
+  .extra .box .x{font-size:15.5px; font-weight:700; color:var(--main); line-height:1.35;}
+  .extra .box .t{font-size:11.5px; color:var(--sub); margin-top:2px;}
+  /* 测算依据 */
+  .basis-meta{background:#f6f9fe; border-radius:10px; padding:10px 12px; font-size:12.5px; color:#23425f; line-height:1.7; margin-bottom:12px;}
+  .basis-step{display:flex; gap:9px; padding:10px 0; border-bottom:1px solid #f0f3f8; font-size:13.5px;}
+  .basis-step:last-child{border-bottom:none;}
+  .basis-step .dot{
+    background:var(--main); color:#fff; border-radius:50%; width:20px; height:20px; flex:none;
+    display:inline-flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:600; margin-top:1px;
+  }
+  .basis-step .txt b{color:var(--main);}
+  .basis-step .txt .formula{display:block; background:#f6f9fe; border-radius:8px; padding:6px 9px; margin-top:5px; color:#23425f; font-size:12.5px;}
+  .basis-step .txt .src{display:block; color:var(--sub); font-size:11px; margin-top:4px;}
+  .basis-total{
+    margin-top:12px; background:#fff8ec; border:1px solid #f5dfb8; border-radius:10px;
+    padding:10px 12px; font-size:13.5px; color:#7a5a22; line-height:1.7;
+  }
+  .emptyTip{color:#b06a1a; font-size:13px; text-align:center; padding:10px 0;}
+  /* 政策摘录 */
+  .tabs{display:flex; gap:8px; margin-bottom:12px;}
+  .tabs button{
+    flex:1; padding:10px 0; border-radius:10px; border:1px solid var(--line); background:#fbfcfe;
+    font-size:14px; cursor:pointer; color:var(--text);
+  }
+  .tabs button.on{background:var(--main); color:#fff; border-color:var(--main); font-weight:600;}
+  .rule-item{display:flex; gap:9px; padding:9px 0; border-bottom:1px solid #f0f3f8; font-size:13.5px;}
+  .rule-item:last-child{border-bottom:none;}
+  .rule-item .dot{color:var(--accent); font-weight:700; flex:none;}
+  .rule-item b{color:var(--main);}
+  .rule-item .src{display:block; color:var(--sub); font-size:11.5px; margin-top:3px;}
+  .rule-item .calc{background:#f6f9fe; border-radius:8px; padding:7px 9px; margin-top:4px; color:#23425f; font-size:12.5px;}
+  .anchor{display:block; margin-top:2px; color:var(--main2); font-size:12px; text-decoration:none;}
+  .disclaimer{font-size:11.5px; color:var(--sub); margin-top:12px; line-height:1.6;}
+  /* 顶部提示 */
+  .toast{
+    position:fixed; left:50%; top:64px; transform:translateX(-50%); z-index:99;
+    background:rgba(32,48,63,.94); color:#fff; font-size:13px; padding:10px 16px; border-radius:10px;
+    max-width:88%; text-align:center; display:none; box-shadow:0 4px 12px rgba(0,0,0,.18);
+  }
+  .split{height:14px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>湖北养老金测算助手</h1>
+  <p>办理养老补缴前 · 快速预估每月领取额度 &nbsp;|&nbsp; 参考估算，以社保核定为准</p>
+</header>
+
+<div class="stepnav" id="stepnav">
+  <a href="#sec1" data-s="1"><b>①</b>基本信息</a>
+  <a href="#sec2" data-s="2"><b>②</b>缴费补缴计划</a>
+  <a href="#sec3" data-s="3"><b>③</b>退休参数</a>
+  <a href="#sec4" data-s="4"><b>④</b>测算结果</a>
+  <a href="#sec5" data-s="5"><b>⑤</b>测算依据</a>
+</div>
+<div class="toast" id="toast"></div>
+
+<div class="wrap">
+
+  <!-- ============ 第一部分：基本信息 ============ -->
+  <section id="sec1" class="card">
+    <h2><span class="no">1</span>基本信息</h2>
+    <div class="f">
+      <div class="frow">
+        <label>姓名 <span class="req">*</span></label>
+        <input type="text" id="f_name" placeholder="输入姓名，自动带出已保存资料" autocomplete="off">
+        <span class="hint" id="name_tip">已保存过的人员，输入姓名即可自动带出资料；新人员直接填写并测算，也可点下方「保存人员资料」留待下次使用。</span>
+      </div>
+      <div id="saved_chips"></div>
+      <div class="grow-row">
+        <div class="frow">
+          <label>出生年月 <span class="req">*</span></label>
+          <div class="birthWrap">
+            <select id="f_birth_y" aria-label="出生年份"></select>
+            <select id="f_birth_m" aria-label="出生月份"></select>
+            <input type="hidden" id="f_birth">
+          </div>
+        </div>
+        <div class="frow">
+          <label>性别 <span class="req">*</span></label>
+          <select id="f_sex">
+            <option value="男">男</option>
+            <option value="女">女</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <label>养老保险类型 <span class="req">*</span></label>
+        <select id="f_type" onchange="onTypeChange()">
+          <option value="zg">职工基本养老保险（单位/灵活就业）</option>
+          <option value="jm">城乡居民养老保险（含原农村养老保险）</option>
+        </select>
+      </div>
+      <div class="frow">
+        <label>所在市（区） <span class="req">*</span></label>
+        <select id="f_city" onchange="onCityChange()"></select>
+        <span class="hint" id="city_hint"></span>
+      </div>
+      <div class="grow-row">
+        <div class="frow">
+          <label>截至目前已缴费年限（年） <span class="req">*</span></label>
+          <input type="number" id="f_years" min="0" max="45" step="0.5" placeholder="如 12.5">
+        </div>
+        <div class="frow">
+          <label>个人养老金账户总额（元） <span class="req">*</span></label>
+          <input type="number" id="f_act" min="0" step="100" placeholder="如 35800">
+        </div>
+      </div>
+      <div class="grow-row" id="zg_extra">
+        <div class="frow">
+          <label>参保身份</label>
+          <select id="f_ident">
+            <option value="zy">灵活就业（费率20%）</option>
+            <option value="gw">在职职工（个人缴8%）</option>
+          </select>
+        </div>
+        <div class="frow">
+          <label>历史平均缴费指数</label>
+          <select id="f_idx">
+            <option value="0.6">0.6（60%档）</option>
+            <option value="0.8">0.8</option>
+            <option value="1" selected>1.0（100%档）</option>
+            <option value="1.2">1.2</option>
+            <option value="1.5">1.5（150%档）</option>
+            <option value="2">2.0（200%档）</option>
+            <option value="3">3.0（300%档）</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow" id="zg_extra2">
+        <label>1996年前视同缴费年限（年，无则填0）</label>
+        <input type="number" id="f_st" min="0" max="25" step="0.5" value="0" placeholder="0">
+      </div>
+      <button class="btn ghost" onclick="savePerson()">保存人员资料（输入姓名时可自动带出）</button>
+      <span class="saveTip" id="save_tip"></span>
+      <div class="note">不点保存也可以完成测算：把上方信息填写完整后，直接进入第②部分填缴费计划、第③部分点「立即测算」即可。</div>
+    </div>
+  </section>
+
+  <!-- ============ 第二部分：未来缴费与补缴计划 ============ -->
+  <section id="sec2" class="card">
+    <h2><span class="no">2</span>未来缴费与补缴计划</h2>
+    <div class="f">
+      <div class="frow">
+        <label id="plan_lbl"></label>
+        <div class="quick">
+          <input type="number" id="quickVal" placeholder="统一填到所有年份" min="0" step="100">
+          <button class="btn small" onclick="fillAll()">应用到全部年份</button>
+        </div>
+        <span class="hint" id="plan_hint"></span>
+      </div>
+      <div class="planRows" id="planRows"></div>
+      <div id="zg_bujiao">
+        <div class="frow">
+          <label>已缴年份补缴：补缴总额（元，个人实缴）</label>
+          <div class="grow-row">
+            <input type="number" id="f_bj_zg" min="0" step="500" placeholder="如 36000">
+            <select id="f_bj_md" style="flex:1">
+              <option value="40">灵活就业补缴（40%进个人账户）</option>
+              <option value="100">单位职工补缴（全额进账户）</option>
+            </select>
+          </div>
+        </div>
+        <div class="note" id="bj_note_zg"></div>
+      </div>
+      <div id="jm_bujiao" style="display:none">
+        <div class="frow">
+          <label>已缴年份补缴：补缴总额（元，全部计入个人账户，无政府补贴）</label>
+          <input type="number" id="f_bj_jm" min="0" step="500" placeholder="如 30000">
+        </div>
+        <div class="note">补缴只计本金＋利息，不享受缴费补贴；补缴年限不计入「缴费年限养老金」分段计算。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 第三部分：退休参数 ============ -->
+  <section id="sec3" class="card">
+    <h2><span class="no">3</span>退休参数</h2>
+    <div class="f">
+      <div class="grow-row">
+        <div class="frow">
+          <label>预计退休年龄（岁）</label>
+          <input type="number" id="f_ra" min="50" max="65" step="1">
+          <span class="hint" id="ra_hint"></span>
+        </div>
+        <div class="frow">
+          <label>计发月数</label>
+          <input type="number" id="f_jf" min="120" max="233" step="1" readonly style="background:#f2f5f9;">
+          <span class="hint" style="width:100%">按退休年龄自动带出</span>
+        </div>
+      </div>
+      <div class="frow" id="p_jjsj">
+        <label>养老金计发基数（元/月，按所在市自动带出，可修改）</label>
+        <input type="number" id="f_jjsj" min="3000" step="10">
+      </div>
+      <div class="frow" id="p_jczs">
+        <label>当地城乡居民基础养老金（元/月，自动带出，可修改）</label>
+        <input type="number" id="f_jczs" min="100" step="1">
+        <span class="hint">以当地人社部门最新公布为准；此为财政发放部分，各地每年调整。</span>
+      </div>
+      <button class="btn primary" onclick="calc()">立即测算月养老金</button>
+    </div>
+  </section>
+
+  <!-- ============ 第四部分：测算结果 ============ -->
+  <section id="sec4" class="card" style="display:none">
+    <h2><span class="no">4</span>测算结果</h2>
+    <div class="resultBox">
+      <div class="lbl" id="r_name_lbl">预计退休后每月领取</div>
+      <div class="big" id="r_total">0 <small>元/月</small></div>
+      <div class="lbl" id="r_sub"></div>
+    </div>
+    <div class="detail" id="r_detail"></div>
+    <div class="extra">
+      <div class="box"><div class="x" id="r_payback_t">-</div><div class="t">约回本时间</div></div>
+      <div class="box"><div class="x" id="r_payback_n">-</div><div class="t">预计回本月数/年数</div></div>
+      <div class="box"><div class="x" id="r_invest">0</div><div class="t">累计投入(元)</div></div>
+    </div>
+    <div class="disclaimer" id="r_note"></div>
+  </section>
+
+  <!-- ============ 第五部分：测算依据与政策摘录 ============ -->
+  <section id="sec5" class="card">
+    <h2><span class="no">5</span>测算依据与政策摘录</h2>
+    <div class="note" id="basis_empty" style="margin-bottom:12px">完成第①~③部分并点击「立即测算月养老金」后，这里将自动生成<b>本次测算的分步依据</b>，逐项说明结果数值是怎么算出来的；下方为该人员所在地（湖北省）相关养老政策摘录。</div>
+    <div id="basis_box"></div>
+    <div style="margin-top:14px; padding-top:12px; border-top:1px dashed var(--line)">
+      <div class="tabs">
+        <button class="on" id="tab_zg" onclick="switchTab('zg')">职工养老保险</button>
+        <button id="tab_jm" onclick="switchTab('jm')">城乡居民（农村）养老</button>
+      </div>
+      <div id="rules_zg">
+        <div class="rule-item"><span class="dot">1</span><div><b>领取条件</b>：累计缴费满15年、达到法定退休年龄（2025年起渐进式延迟退休，男原60岁、原55岁女职工、原50岁女职工逐步延至63、58、55岁，本工具按整岁估算，可在第③步调整）。<span class="src">依据：《社会保险法》第16条、全国延迟退休改革决定（2025.1.1施行）</span></div></div>
+        <div class="rule-item"><span class="dot">2</span><div><b>月养老金 = 基础养老金 + 个人账户养老金 + 过渡性养老金</b>（1996年底前有缴费/工龄者才有过渡性养老金）<span class="src">依据：国发〔2005〕38号、鄂政发〔2006〕42号</span></div></div>
+        <div class="rule-item"><span class="dot">3</span><div><b>基础养老金</b>＝计发基数×(1＋本人平均缴费指数)÷2×累计缴费年限×1%<div class="calc">示例：计发基数9112元、指数1.0、缴费30年 → 9112×(1+1)÷2×30×1%＝2733.6元/月</div></div></div>
+        <div class="rule-item"><span class="dot">4</span><div><b>个人账户养老金</b>＝个人账户累计储存额 ÷ 计发月数（50岁=195个月、55岁=170个月、60岁=139个月）<div class="calc">示例：账户12万元、60岁退休 → 120000÷139≈863元/月</div></div></div>
+        <div class="rule-item"><span class="dot">5</span><div><b>过渡性养老金</b>＝计发基数×视同缴费指数×视同缴费年限×过渡系数（湖北约1.2%）<div class="calc">示例：计发基数7360、指数0.8、视同5年 → 7360×0.8×5×1.2%≈353元/月</div></div></div>
+        <div class="rule-item"><span class="dot">6</span><div><b>湖北养老金计发基数（2025年参考口径，每年公布）</b>：武汉及省直≈9112元/月；黄石、十堰、襄阳、宜昌、荆门、随州、恩施≈7300-7424元；荆州、鄂州、孝感、黄冈、咸宁、仙桃、天门、潜江、神农架≈7210-7320元。<span class="src">来源：湖北省人社厅历年计发基数口径（参考值，请以当年官方公布为准）</span></div></div>
+        <div class="rule-item"><span class="dot">7</span><div><b>缴费基数下限（2025年度）</b>：武汉及省直7496元/月、二档地区7226元/月、三档地区7154元/月，缴费在此下限与300%上限之间按档次选择；<b>灵活就业费率20%</b>（8%进个人账户、12%进统筹），单位职工个人缴8%全进个人账户。</div></div>
+        <div class="rule-item"><span class="dot">8</span><div><b>补缴说明</b>：补缴按补缴时基数×费率缴纳，<b>计入个人账户的比例按缴费身份确定</b>（灵活就业40%、单位职工全额），补缴年限计入缴费年限但不计个人缴费年限补贴。具体以社保经办核定为准。</div></div>
+        <a class="anchor" href="http://www.xiangyang.gov.cn/fw/ztfw/sbly/ylbx/wjtz/202304/t20230413_3195088.shtml" target="_blank" rel="nofollow noopener">相关文件：湖北省人社厅等《关于调整城乡居民养老保险缴费政策的通知》(鄂人社发〔2023〕3号)（襄阳政府网转发，职工养老规则同见鄂政发〔2006〕42号）</a>
+      </div>
+      <div id="rules_jm" style="display:none">
+        <div class="rule-item"><span class="dot">1</span><div><b>领取条件</b>：年满60周岁、累计缴费满15年（原"农村养老保险/新农保"已并入此制度）。<span class="src">依据：国发〔2014〕8号《关于建立统一的城乡居民基本养老保险制度的意见》</span></div></div>
+        <div class="rule-item"><span class="dot">2</span><div><b>月养老金 = 基础养老金 + 缴费年限养老金 + 个人账户养老金</b>，支付终身，领完139个月后个人账户部分由国家继续按原标准发放。<span class="src">来源：湖北省政府12345热线官方答复口径（2026年）</span></div></div>
+        <div class="rule-item"><span class="dot">3</span><div><b>基础养老金</b>：中央＋省＋地方财政全额发放。2026年湖北多数县区180-195元/月，武汉江夏367元为全省最高，宜昌城区205元、大冶199元、房县202元、咸安191元、监利/麻城/武穴180元等。<span class="src">参考值，请以户籍地人社部门最新公布为准，可在本工具第③步修改</span></div></div>
+        <div class="rule-item"><span class="dot">4</span><div><b>缴费年限养老金（湖北特色，分段加发）</b>：缴费≤15年部分，每满1年月加发1元；15-25年部分，每满1年月加发2元；25年以上部分，每满1年月加发3元。<div class="calc">缴15年→15元；缴20年→15×1+5×2=25元；缴30年→15+20+15=50元</div><span class="src">依据：鄂人社发〔2023〕3号（各市转发执行）</span></div></div>
+        <div class="rule-item"><span class="dot">5</span><div><b>个人账户养老金</b>＝个人账户全部储存额（本金+财政补贴+利息）÷139。<div class="calc">示例：账户总额6万元 → 60000÷139≈432元/月</div></div></div>
+        <div class="rule-item"><span class="dot">6</span><div><b>缴费档次与缴费补贴（六档，当年缴费才享受）</b>：300/400元补45元；500-700元补81元；800-900元补138元；1000-1400元补180元；1500-1900元补285元；2000元以上（上限9000元）补402元。<span class="src">依据：鄂人社发〔2023〕3号</span></div></div>
+        <div class="rule-item"><span class="dot">7</span><div><b>补缴说明</b>：补缴只计本金+利息，<b>不享受缴费补贴</b>；补缴年限<b>不计入</b>缴费年限养老金的计算基数。一次性补缴15年常用档次为400/1000/6000元。</div></div>
+        <a class="anchor" href="http://www.xiangyang.gov.cn/fw/ztfw/sbly/ylbx/wjtz/202304/t20230413_3195088.shtml" target="_blank" rel="nofollow noopener">相关文件：鄂人社发〔2023〕3号全文（襄阳政府网转发）</a>
+        <a class="anchor" href="http://shayang.jingmen.gov.cn/art/2025/1/6/art_22016_1160620.html" target="_blank" rel="nofollow noopener">荆门市2025年城乡居民养老保险缴费标准温馨提示（含补贴档位）</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="split"></div>
+  <div class="card">
+    <div class="disclaimer">
+      <b>重要说明：</b>本工具按湖北省现行公开政策与公式估算，结果仅供办理补缴前参考，<b>不构成待遇承诺</b>。每年缴费基数、计发基数、基础养老金标准均逐年调整；渐进式延迟退休、个人账户记账利率、待遇计发细则以湖北省人社厅及当地社保经办机构实际核定为准。个人账户总额等数据可通过「鄂汇办」APP或当地社保窗口查询。测算依据与政策摘录见页面第⑤部分。
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ================= 安全存储（兼容微信内置浏览器） ================= */
+var MEM = {}; // 本地存储不可用时的内存兜底
+var LS_OK = true;
+try { var __t="__t"; localStorage.setItem(__t,"1"); localStorage.removeItem(__t); } catch(e){ LS_OK=false; }
+function sGet(k){ if(LS_OK){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):null; }catch(e){} } return MEM[k]||null; }
+function sSet(k,v){ if(LS_OK){ try{ localStorage.setItem(k,JSON.stringify(v)); return; }catch(e){} } MEM[k]=v; }
+
+/* ================= 数据 ================= */
+var CITYS = [
+  {name:"武汉市",       tier:1, jjsj:9112, xq:7496, jm:300,  jmNote:"武汉各区270-367元，江夏367最高"},
+  {name:"黄石市",       tier:2, jjsj:7360, xq:7226, jm:199,  jmNote:"大冶199元"},
+  {name:"十堰市",       tier:2, jjsj:7360, xq:7226, jm:202,  jmNote:"房县202元"},
+  {name:"襄阳市",       tier:2, jjsj:7360, xq:7226, jm:195,  jmNote:"参考190元以上"},
+  {name:"宜昌市",       tier:2, jjsj:7360, xq:7226, jm:205,  jmNote:"宜昌城区205元"},
+  {name:"荆门市",       tier:2, jjsj:7360, xq:7226, jm:185,  jmNote:"参考值，以当地为准"},
+  {name:"随州市",       tier:2, jjsj:7360, xq:7226, jm:185,  jmNote:"参考值，以当地为准"},
+  {name:"恩施州",       tier:2, jjsj:7360, xq:7226, jm:185,  jmNote:"参考值，以当地为准"},
+  {name:"荆州市",       tier:3, jjsj:7260, xq:7154, jm:180,  jmNote:"监利180、洪湖182元"},
+  {name:"鄂州市",       tier:3, jjsj:7260, xq:7154, jm:185,  jmNote:"参考值，以当地为准"},
+  {name:"孝感市",       tier:3, jjsj:7260, xq:7154, jm:185,  jmNote:"参考值，以当地为准"},
+  {name:"黄冈市",       tier:3, jjsj:7260, xq:7154, jm:180,  jmNote:"麻城、武穴180元"},
+  {name:"咸宁市",       tier:3, jjsj:7260, xq:7154, jm:191,  jmNote:"咸安区191元"},
+  {name:"仙桃市",       tier:3, jjsj:7260, xq:7154, jm:185,  jmNote:"参考值，以当地为准"},
+  {name:"潜江市",       tier:3, jjsj:7260, xq:7154, jm:185,  jmNote:"参考值，以当地为准"},
+  {name:"天门市",       tier:3, jjsj:7260, xq:7154, jm:185,  jmNote:"参考值，以当地为准"},
+  {name:"神农架林区",   tier:3, jjsj:7260, xq:7154, jm:185,  jmNote:"参考值，以当地为准"}
+];
+var LS_PERSON = "hbyanglao_persons_v2";
+var LS_PLAN   = "hbyanglao_plans_v2";
+var PLAN = {};
+
+/* ================= 工具 ================= */
+function $(id){ return document.getElementById(id); }
+function num(v){ var n=parseFloat(v); return isFinite(n)&&n>0 ? n : 0; }
+function fmt(v){ return (Math.round(v*100)/100).toLocaleString("zh-CN",{maximumFractionDigits:2}); }
+var toastTimer=null;
+function tip(msg){
+  var t=$("toast"); t.textContent=msg; t.style.display="block";
+  clearTimeout(toastTimer); toastTimer=setTimeout(function(){ t.style.display="none"; },2600);
+}
+function loadPersons(){ return sGet(LS_PERSON)||{}; }
+function savePersons(o){ sSet(LS_PERSON,o); }
+function loadPlan(){ return sGet(LS_PLAN)||{}; }
+function savePlan(o){ sSet(LS_PLAN,o); }
+function subsidyJm(amt){
+  if(amt<=0) return 0;
+  if(amt<=400) return 45;
+  if(amt<=700) return 81;
+  if(amt<=900) return 138;
+  if(amt<=1400) return 180;
+  if(amt<=1900) return 285;
+  return 402;
+}
+function nianxianJiafa(n){
+  if(n<=0) return 0;
+  var a=Math.min(n,15), b=Math.max(0,Math.min(n,25)-15), c=Math.max(0,n-25);
+  return a*1+b*2+c*3;
+}
+function jifaMonth(age){ return {50:195,55:170,60:139}[age]||0; }
+
+/* ================= 初始化 ================= */
+var citySel=$("f_city");
+CITYS.forEach(function(c){ var o=document.createElement("option"); o.value=c.name; o.text=c.name; citySel.appendChild(o); });
+function cityObj(){ var n=$("f_city").value; for(var i=0;i<CITYS.length;i++){ if(CITYS[i].name===n) return CITYS[i]; } return CITYS[0]; }
+function calcRetireAge(){
+  var sex=$("f_sex").value, type=$("f_type").value;
+  return type==="zg" ? (sex==="男"?60:55) : 60;
+}
+function refreshFields(){
+  var type=$("f_type").value;
+  $("zg_extra").style.display  = type==="zg" ? "" : "none";
+  $("zg_extra2").style.display = type==="zg" ? "" : "none";
+  $("zg_bujiao").style.display = type==="zg" ? "" : "none";
+  $("jm_bujiao").style.display = type==="jm" ? "" : "none";
+  $("p_jjsj").style.display    = type==="zg" ? "" : "none";
+  $("p_jczs").style.display    = type==="jm" ? "" : "none";
+  $("plan_lbl").textContent = type==="zg"
+    ? "未来每年（至退休前）缴费基数：单位：元/月（用于计算缴费指数与个人账户进账）"
+    : "未来每年（至退休前）缴费金额：单位：元/年（500-9000元，当年缴费含政府补贴）";
+  var ra=calcRetireAge();
+  $("f_ra").value=ra;
+  $("f_jf").value=jifaMonth(ra)||"";
+  $("ra_hint").textContent = type==="zg"
+    ? "默认："+($("f_sex").value==="男"?"男60岁；2025年起渐进式延迟退休，请结合实际调整":"女55岁（原50岁女职工为50岁，请按实际调整）；2025年起渐进式延迟退休")
+    : "城乡居民养老统一60岁；可按实际调整";
+  onCityChange();
+  updateBjNote();
+  renderPlan();
+}
+function onTypeChange(){ refreshFields(); }
+function onCityChange(){
+  var c=cityObj();
+  $("f_jjsj").value=c.jjsj;
+  $("f_jczs").value=c.jm;
+  $("city_hint").textContent = c.tier===1
+    ? "武汉属一档：计发基数≈"+c.jjsj+"元/月，缴费下限"+c.xq+"元/月；居民基础养老金："+c.jmNote
+    : "本档计发基数约"+c.jjsj+"元/月（属"+(c.tier===2?"二档：黄石/十堰/襄阳/宜昌/荆门/随州/恩施":"三档：荆州/鄂州/孝感/黄冈/咸宁/仙桃/天门/潜江/神农架")+"），缴费下限"+c.xq+"元/月；居民基础养老金："+c.jmNote;
+}
+function updateBjNote(){
+  var md=$("f_bj_md")?$("f_bj_md").value:"40";
+  $("bj_note_zg").innerHTML = "示例：补缴总额36000元 → 计入个人账户 "+(md==="100"?"36000":"14400")+" 元（"+md+"%），其余进统筹基金。实际补缴核算以社保经办为准。";
+  var idt=$("f_ident")?$("f_ident").value:"zy";
+  if(md==="100"){ $("f_ident").value="gw"; } else { $("f_ident").value="zy"; }
+  renderPlanInfoAll();
+}
+function sexChanged(){ refreshFields(); }
+
+/* ================= 缴费计划行 ================= */
+function planYearRange(){
+  var birth=$("f_birth").value; if(!birth) return [];
+  var ra=num($("f_ra").value)||calcRetireAge();
+  var retireYear=parseInt(birth.slice(0,4),10)+ra;
+  var nowY=new Date().getFullYear(), arr=[];
+  for(var y=nowY; y<retireYear; y++){ arr.push(y); if(arr.length>=40) break; }
+  return arr;
+}
+function renderPlan(){
+  var name=$("f_name").value.trim();
+  var yrs=planYearRange();
+  var box=$("planRows"); box.innerHTML="";
+  if(yrs.length===0){ box.innerHTML='<div class="emptyTip">请先在第①部分填写「姓名」与「出生年月」，将自动生成到退休前每年的缴费填写行。</div>'; return; }
+  var type=$("f_type").value;
+  var plan=loadPlan(); if(name && !plan[name]) plan[name]={};
+  $("plan_hint").textContent = type==="zg"
+    ? "共 "+yrs.length+" 年：每行填当年月缴费基数，右侧自动显示对应指数与年入个人账户金额。"
+    : "共 "+yrs.length+" 年：每行填当年缴费金额，右侧自动显示政府补贴与合计进账。";
+  if(!name){ box.innerHTML='<div class="emptyTip">请先在第①部分填写「姓名」，缴费计划将按姓名保存。</div>'; return; }
+  yrs.forEach(function(y){
+    var row=document.createElement("div"); row.className="planRow";
+    var yl=document.createElement("span"); yl.className="yr"; yl.textContent=y+"年";
+    var inp=document.createElement("input"); inp.type="number"; inp.min=0; inp.step=100;
+    inp.placeholder=type==="zg"?"月缴费基数":"缴费金额";
+    if(plan[name][y]) inp.value=plan[name][y];
+    var info=document.createElement("span"); info.className="info";
+    var upd=function(){
+      var v=num(inp.value); plan[name][y]=v; savePlan(plan);
+      renderPlanInfo(row,v,y);
+    };
+    inp.oninput=upd;
+    row.appendChild(yl); row.appendChild(inp); row.appendChild(info);
+    box.appendChild(row);
+    if(plan[name][y]) upd();
+  });
+}
+function renderPlanInfo(row,v,y){
+  var type=$("f_type").value;
+  if(!row) return;
+  var info=row.querySelector(".info");
+  if(type==="zg"){
+    var jjsj=num($("f_jjsj").value)||7360;
+    var idx=v/jjsj;
+    var accIn=v*12*0.08;
+    var idt=$("f_ident")?$("f_ident").value:"zy";
+    var pay=v*12*(idt==="gw"?0.08:0.20);
+    info.innerHTML="指数"+idx.toFixed(2)+"<br>年入账户"+Math.round(accIn)+"元"+(idt==="gw"?"":"<br>年缴"+Math.round(pay)+"(20%)");
+  } else {
+    var sb=subsidyJm(v);
+    info.innerHTML="补贴"+sb+"元<br>合计进账"+Math.round(v+sb)+"元";
+  }
+}
+function renderPlanInfoAll(){ document.querySelectorAll(".planRow").forEach(function(r,i){ var v=num(r.querySelector("input").value); if(v>0) renderPlanInfo(r,v); }); }
+function fillAll(){
+  var v=num($("quickVal").value);
+  var name=$("f_name").value.trim();
+  if(!v){ tip("请先输入要应用的值"); return; }
+  if(!name){ tip("请先在第①部分填写姓名"); return; }
+  var plan=loadPlan(); if(!plan[name]) plan[name]={};
+  planYearRange().forEach(function(y){ plan[name][y]=v; });
+  savePlan(plan); renderPlan(); $("quickVal").value="";
+}
+
+/* ================= 出生年月选择（1900-2100，兼容微信内置浏览器） ================= */
+function initBirthSelects(){
+  var y=$("f_birth_y"), m=$("f_birth_m"), i;
+  for(i=1900;i<=2100;i++){
+    var o=document.createElement("option"); o.value=""+i; o.textContent=i+"年";
+    y.appendChild(o);
+  }
+  for(i=1;i<=12;i++){
+    var mo=document.createElement("option"); mo.value=(i<10?"0":"")+i; mo.textContent=i+"月";
+    m.appendChild(mo);
+  }
+  y.selectedIndex=-1; m.selectedIndex=-1;
+}
+function syncBirth(){
+  var y=$("f_birth_y").value, m=$("f_birth_m").value;
+  $("f_birth").value=(y&&m)?y+"-"+m:"";
+  renderPlan();
+}
+function applyBirthFromValue(){
+  var v=$("f_birth").value||"";
+  var y=v.slice(0,4), m=v.slice(5,7);
+  var sy=$("f_birth_y"), sm=$("f_birth_m");
+  if(y>=1900&&y<=2100){ sy.value=y; } else { sy.selectedIndex=-1; }
+  if(/^(0[1-9]|1[0-2])$/.test(m)){ sm.value=m; } else { sm.selectedIndex=-1; }
+}
+
+/* ================= 保存/带出 ================= */
+function readForm(){
+  return {
+    birth:$("f_birth").value, sex:$("f_sex").value, type:$("f_type").value,
+    city:$("f_city").value, years:num($("f_years").value), act:num($("f_act").value),
+    idx:$("f_idx").value, st:num($("f_st").value), ident:$("f_ident").value,
+    ra:num($("f_ra").value)||calcRetireAge(), jf:num($("f_jf").value),
+    jjsj:num($("f_jjsj").value), jczs:num($("f_jczs").value),
+    bj: num($("f_type").value==="zg" ? $("f_bj_zg").value : $("f_bj_jm").value),
+    bj_md:$("f_bj_md")?$("f_bj_md").value:"40"
+  };
+}
+function savePerson(){
+  var name=$("f_name").value.trim();
+  if(!name){ tip("请先填写姓名再保存"); return; }
+  if(!$("f_birth").value){ tip("请填写出生年月"); return; }
+  var d=readForm(); d.name=name;
+  var ps=loadPersons(); ps[name]=d; savePersons(ps);
+  $("save_tip").textContent="已保存「"+name+"」的资料，下次输入姓名可自动带出。"+(LS_OK?"":"（当前浏览器不支持本地保存，关闭页面后需重新录入）");
+  $("save_tip").className="saveTip ok";
+  renderChips();
+}
+function loadByName(name){
+  var ps=loadPersons(); var d=ps[name];
+  if(!d) return false;
+  $("f_birth").value=d.birth||""; applyBirthFromValue();
+  $("f_sex").value=d.sex||"男"; $("f_type").value=d.type||"zg";
+  $("f_city").value=d.city||CITYS[0].name;
+  $("f_years").value=d.years||""; $("f_act").value=d.act||"";
+  $("f_idx").value=d.idx||"1"; $("f_st").value=d.st||0;
+  if(d.ident) $("f_ident").value=d.ident;
+  if(d.ra) $("f_ra").value=d.ra;
+  if(d.jjsj) $("f_jjsj").value=d.jjsj;
+  if(d.jczs) $("f_jczs").value=d.jczs;
+  if(d.bj) (d.type==="zg"?$("f_bj_zg"):$("f_bj_jm")).value=d.bj;
+  if(d.bj_md && $("f_bj_md")) $("f_bj_md").value=d.bj_md;
+  refreshFields();
+  $("name_tip").innerHTML="已自动带出「"+name+"」的保存资料，可修改后重新保存；其缴费计划也已载入。";
+  return true;
+}
+function renderChips(){
+  var ps=loadPersons(); var names=Object.keys(ps);
+  var box=$("saved_chips"); box.innerHTML="";
+  if(names.length===0) return;
+  var t=document.createElement("div"); t.className="chips";
+  names.forEach(function(n){
+    var c=document.createElement("span"); c.className="chip"; c.textContent=n;
+    c.onclick=function(){ $("f_name").value=n; loadByName(n); };
+    t.appendChild(c);
+  });
+  box.appendChild(t);
+}
+
+/* ================= 计算 ================= */
+function calc(){
+  var name=$("f_name").value.trim();
+  if(!name){ tip("请先在第①部分填写姓名"); return; }
+  if(!$("f_birth").value){ tip("请先填写出生年月"); return; }
+  var d=readForm();
+  var type=d.type;
+  var histYears=d.years;
+  var acc0=d.act;
+  var yrs=planYearRange();
+  if(yrs.length===0){ tip("出生年月或退休年龄有误，无法生成缴费计划"); return; }
+  var plan=loadPlan(); var p=name? (plan[name]||{}) : {};
+  var jmTotal=0, zgIdxSum=0, zgAccIn=0, futurePaid=0;
+  yrs.forEach(function(y){
+    var v=num(p[y]);
+    if(type==="zg"){
+      var idx=v/(d.jjsj||7360);
+      zgIdxSum += idx; zgAccIn += v*12*0.08;
+      futurePaid += v*12*(d.ident==="gw"?0.08:0.20);
+    } else { jmTotal += v+subsidyJm(v); futurePaid += v; }
+  });
+  var futureYears=yrs.length;
+  var totalYears=histYears+futureYears;
+  var base, accP, trans=0, jiafa=0;
+  var rDetail=[], steps=[];
+
+  if(type==="zg"){
+    var avgIdx = totalYears>0 ? (parseFloat(d.idx||"1")*histYears+zgIdxSum)/totalYears : parseFloat(d.idx||"1");
+    base = d.jjsj*(1+avgIdx)/2*totalYears*0.01;
+    var accTotal = acc0 + zgAccIn + d.bj*(d.bj_md==="100"?1:0.4);
+    accP = accTotal/(d.jf||139);
+    if(d.st>0){ trans = d.jjsj*parseFloat(d.idx||"1")*d.st*0.012; }
+    var sum=base+accP+trans;
+    var totalInvest = acc0 + d.bj + futurePaid;
+
+    /* 依据 */
+    steps.push({
+      t:"基础养老金（为什么是 "+fmt(base)+" 元/月）",
+      h:"湖北职工养老按「计发基数×(1+平均缴费指数)÷2×缴费年限×1%」计算：计发基数取"+d.city+"参考值 "+fmt(d.jjsj)+" 元，平均缴费指数按（历史指数"+d.idx+"×已缴"+histYears+"年 + 你填写的各年计划缴费推算指数）加权为 "+avgIdx.toFixed(2)+"，合计缴费约 "+totalYears+" 年。代入："+fmt(d.jjsj)+"×(1+"+avgIdx.toFixed(2)+")÷2×"+totalYears+"×1% ≈ <b>"+fmt(base)+" 元/月</b>。",
+      src:"依据：国发〔2005〕38号、鄂政发〔2006〕42号"
+    });
+    steps.push({
+      t:"个人账户养老金（为什么是 "+fmt(accP)+" 元/月）",
+      h:"个人账户期末余额 = 现有账户 "+fmt(acc0)+" 元 + 未来各年缴费进账（缴费基数×8%×12）合计 "+fmt(zgAccIn)+" 元 + 补缴计入 "+fmt(d.bj*(d.bj_md==="100"?1:0.4))+" 元（按"+(d.bj_md==="100"?"单位职工全额":"灵活就业40%")+"口径）= 约 "+fmt(accTotal)+" 元；再除以退休年龄 "+d.ra+" 岁对应的计发月数 "+(d.jf||139)+"："+fmt(accTotal)+"÷"+(d.jf||139)+" ≈ <b>"+fmt(accP)+" 元/月</b>。",
+      src:"依据：国发〔2005〕38号计发月数表（60岁139、55岁170、50岁195）"
+    });
+    if(d.st>0){
+      steps.push({
+        t:"过渡性养老金（为什么是 "+fmt(trans)+" 元/月）",
+        h:"因存在1996年前视同缴费年限 "+d.st+" 年，按「计发基数×视同指数×视同年限×1.2%」："+fmt(d.jjsj)+"×"+d.idx+"×"+d.st+"×1.2% ≈ <b>"+fmt(trans)+" 元/月</b>。",
+        src:"依据：鄂政发〔2006〕42号"
+      });
+    }
+    var meta = "本次测算对象："+name+"｜"+d.city+"｜职工基本养老保险（"+(d.ident==="gw"?"在职职工":"灵活就业")+"）｜已缴"+histYears+"年｜现有个人账户"+fmt(acc0)+"元｜预计"+d.ra+"岁退休（计发月数"+(d.jf||139)+"）";
+    renderBasis(meta, steps, sum, totalInvest, type);
+  } else {
+    var jcs = d.jczs||180;
+    var accTotal = acc0 + jmTotal + d.bj;
+    accP = accTotal/139;
+    jiafa = nianxianJiafa(totalYears);
+    base = jcs + jiafa;
+    var sum = base + accP;
+    var totalInvest = acc0 + d.bj + futurePaid;
+
+    var n1=Math.min(totalYears,15), n2=Math.max(0,Math.min(totalYears,25)-15), n3=Math.max(0,totalYears-25);
+    steps.push({
+      t:"基础养老金（为什么是 "+fmt(jcs)+" 元/月）",
+      h:"城乡居民基础养老金由中央＋省＋地方财政发放，不依赖个人缴费。按你选择的地区（"+d.city+"）参考标准为 "+fmt(jcs)+" 元/月（各地每年调整，见下方政策摘录）。",
+      src:"来源：湖北省政府12345官方答复口径及各地公布标准（2026年参考值）"
+    });
+    steps.push({
+      t:"缴费年限养老金（为什么是 "+fmt(jiafa)+" 元/月）",
+      h:"湖北规定缴费年限分段加发：15年以内每年+1元、16-25年每年+2元、25年以上每年+3元。你合计正常缴费约 "+totalYears+" 年（补缴年限不计入）= "+n1+"×1 + "+n2+"×2 + "+n3+"×3 ≈ <b>"+fmt(jiafa)+" 元/月</b>。",
+      src:"依据：鄂人社发〔2023〕3号（各市转发执行）"
+    });
+    steps.push({
+      t:"个人账户养老金（为什么是 "+fmt(accP)+" 元/月）",
+      h:"个人账户余额 = 现有账户 "+fmt(acc0)+" 元 + 未来各年缴费及政府补贴合计 "+fmt(jmTotal)+" 元 + 补缴 "+fmt(d.bj)+" 元（无补贴）= 约 "+fmt(accTotal)+" 元；城乡居民养老统一 ÷139（60岁计发月数）："+fmt(accTotal)+"÷139 ≈ <b>"+fmt(accP)+" 元/月</b>。",
+      src:"依据：国发〔2014〕8号；计发月数139个月"
+    });
+    var meta = "本次测算对象："+name+"｜"+d.city+"｜城乡居民养老保险（含原农村养老保险）｜已缴"+histYears+"年｜现有个人账户"+fmt(acc0)+"元｜按60岁退休估算";
+    renderBasis(meta, steps, sum, totalInvest, type);
+  }
+
+  var ms=monthSumOf(type,base,accP,trans,jiafa);
+  /* 结果渲染 */
+  $("sec4").style.display="";
+  $("r_name_lbl").textContent=(name?name+"：":"")+"预计退休后每月领取";
+  $("r_total").innerHTML = fmt(ms) + " <small>元/月</small>";
+  var avgIdxShow = type==="zg" ? avgIdx.toFixed(2) : "";
+  $("r_sub").textContent = type==="zg"
+    ? "退休年龄"+d.ra+"岁 · 计发月数"+(d.jf||139)+" · 总缴费约"+totalYears+"年 · 平均指数"+avgIdxShow
+    : "60岁退休 · 总缴费约"+totalYears+"年（正常缴费，不含补缴年限）";
+  /* 明细 */
+  var det=$("r_detail"); det.innerHTML="";
+  rDetail.push({k:"基础养老金", v:base});
+  if(type==="jm") rDetail.push({k:"缴费年限养老金", v:jiafa});
+  rDetail.push({k:"个人账户养老金", v:accP});
+  if(type==="zg"&&d.st>0) rDetail.push({k:"过渡性养老金", v:trans});
+  rDetail.forEach(function(r){
+    var row=document.createElement("div"); row.className="row";
+    row.innerHTML='<span class="k">'+r.k+'</span><span class="v">'+fmt(r.v)+' 元/月</span>';
+    det.appendChild(row);
+  });
+  var ms=monthSumOf(type,base,accP,trans,jiafa);
+  var row=document.createElement("div"); row.className="row tot";
+  row.innerHTML='<span class="k">月养老金合计</span><span class="v">'+fmt(ms)+' 元/月</span>';
+  det.appendChild(row);
+  $("r_invest").textContent=fmt(totalInvest);
+  var months=ms>0?Math.ceil(totalInvest/ms):0;
+  var yY=Math.floor(months/12), mM=months%12;
+  $("r_payback_t").textContent=months>0?(yY>0?yY+"年"+mM+"个月":mM+"个月"):"-";
+  $("r_payback_n").textContent=months>0?months+"个月 ≈ "+(months/12).toFixed(1)+"年":"-";
+  $("r_note").textContent = type==="zg"
+    ? "说明：按「计发基数×(1+平均指数)÷2×年限×1% + 账户÷计发月数"+(d.st>0?" + 过渡性":"")+"」估算；账户未计利息，实际以社保核定为准。"
+    : "说明：按「基础养老金+缴费年限养老金+账户÷139」估算；当年缴费含政府补贴、补缴不含补贴；账户未计利息，实际以当地人社核定为准。";
+  setTimeout(function(){ $("sec4").scrollIntoView({behavior:"smooth", block:"start"}); },120);
+}
+function monthSumOf(type,base,accP,trans,jiafa){ return type==="zg" ? base+accP+trans : base+accP; }
+
+/* 第五部分：动态测算依据 */
+function renderBasis(meta, steps, sum, totalInvest, type){
+  var box=$("basis_box"); box.innerHTML="";
+  $("basis_empty").style.display="none";
+  var m=document.createElement("div"); m.className="basis-meta"; m.innerHTML=meta; box.appendChild(m);
+  steps.forEach(function(s,i){
+    var d=document.createElement("div"); d.className="basis-step";
+    d.innerHTML='<span class="dot">'+(i+1)+'</span><div class="txt"><b>'+s.t+'</b><span class="formula">'+s.h+'</span><span class="src">'+s.src+'</span></div>';
+    box.appendChild(d);
+  });
+  var months=sum>0?Math.ceil(totalInvest/sum):0;
+  var yY=Math.floor(months/12), mM=months%12;
+  var tot=document.createElement("div"); tot.className="basis-total";
+  tot.innerHTML="<b>汇总</b>：月养老金合计 ≈ <b>"+fmt(sum)+" 元/月</b>；按累计投入 "+fmt(totalInvest)+" 元估算，约 <b>"+(months>0?(yY>0?yY+"年"+mM+"个月":mM+"个月"):"-")+"</b>（"+ (months>0?months+"个月 ≈ "+(months/12).toFixed(1)+"年":"") +"）可收回投入。以上均为估算，实际金额以社保经办核定为准。";
+  box.appendChild(tot);
+}
+
+/* 政策摘录 tab */
+function switchTab(tp){
+  $("tab_zg").className = tp==="zg"?"on":"";
+  $("tab_jm").className = tp==="jm"?"on":"";
+  $("rules_zg").style.display = tp==="zg"?"":"none";
+  $("rules_jm").style.display = tp==="jm"?"":"none";
+}
+
+/* ================= 事件绑定 ================= */
+$("f_name").oninput=function(){
+  var v=this.value.trim();
+  $("name_tip").textContent="已保存过的人员，输入姓名即可自动带出资料；新人员直接填写并测算，也可点下方「保存人员资料」留待下次使用。";
+  $("name_tip").className="hint";
+  if(v) loadByName(v);
+};
+$("f_sex").onchange=function(){ var ra=calcRetireAge(); $("f_ra").value=ra; $("f_jf").value=jifaMonth(ra)||""; refreshFields(); };
+$("f_ra").oninput=function(){
+  var a=num(this.value); var m=jifaMonth(a);
+  $("f_jf").value=m||"";
+  if(!m&&a>0) $("ra_hint").textContent="非标准整岁（50/55/60）退休年龄，计发月数请以社保核定为准，可手动填写。";
+  else $("ra_hint").textContent="按退休年龄自动带出的计发月数（"+m+"）。";
+  renderPlan();
+};
+$("f_birth_y").onchange=$("f_birth_m").onchange=syncBirth;
+$("f_ident").onchange=function(){ renderPlanInfoAll(); };
+$("f_bj_md").onchange=function(){ updateBjNote(); };
+
+/* 步骤导航高亮 */
+var secIds=["sec1","sec2","sec3","sec4","sec5"];
+function onScroll(){
+  var cur="sec1";
+  secIds.forEach(function(id){
+    var el=$(id);
+    if(el && el.getBoundingClientRect().top<=90) cur=id;
+  });
+  document.querySelectorAll("#stepnav a").forEach(function(a){ a.className = a.getAttribute("href")==="#"+cur ? "on" : ""; });
+}
+window.addEventListener("scroll", onScroll, {passive:true});
+
+initBirthSelects();
+renderChips();
+refreshFields();
+</script>
+</body>
+</html>
